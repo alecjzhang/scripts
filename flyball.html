@@ -1,0 +1,95 @@
+<html>
+   <head>
+     <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+     <style>
+       .game-container { position: relative; width: 800px; height: 200px; border: 1px solid black; overflow: hidden; }
+       .player { position: absolute; left: 50px; width: 30px; height: 50px; background: blue; transition: bottom 0.3s; }
+       .obstacle { position: absolute; width: 20px; height: 40px; background: red; bottom: 0; }
+       .status { font-weight: bold; margin: 10px 0; }
+       .jumping { color: green; }
+       .grounded { color: blue; }
+       .warning { color: red; font-weight: bold; animation: flash 1s infinite; }
+       @keyframes flash {
+         0%, 100% { opacity: 1; }
+         50% { opacity: 0; }
+       }
+     </style>
+   </head>
+   <body>
+     <div id="root"></div>
+     
+     <script type="text/babel">
+       function Game() {
+         const [isJumping, setIsJumping] = React.useState(false);
+         const [obstaclePosition, setObstaclePosition] = React.useState(800);
+         const [score, setScore] = React.useState(0);
+         const [showWarning, setShowWarning] = React.useState(false);
+
+         React.useEffect(() => {
+           const interval = setInterval(() => {
+             setObstaclePosition(pos => {
+               if (pos <= -20) {
+                 setScore(s => s + 1);
+                 return 800;
+               }
+               return pos - 5;
+             });
+           }, 20);
+
+           return () => clearInterval(interval);
+         }, []);
+
+         React.useEffect(() => {
+           if (obstaclePosition > 30 && obstaclePosition < 80 && !isJumping) {
+             setShowWarning(true);
+             setTimeout(() => setShowWarning(false), 1000);
+           }
+         }, [obstaclePosition, isJumping]);
+
+         const jump = (e) => {
+           if (e.key === 'ArrowUp' && !isJumping) {
+             setIsJumping(true);
+             setTimeout(() => setIsJumping(false), 500);
+           }
+         };
+
+         React.useEffect(() => {
+           window.addEventListener('keydown', jump);
+           return () => window.removeEventListener('keydown', jump);
+         }, [isJumping]);
+
+         return (
+           <div style={{textAlign: 'center'}}>
+             <div className="game-container">
+               <div 
+                 className="player" 
+                 style={{bottom: isJumping ? '100px' : '0'}}
+               />
+               <div 
+                 className="obstacle" 
+                 style={{left: \`\${obstaclePosition}px\`}}
+               />
+             </div>
+             <div>Score: {score}</div>
+             <div className="status">
+               Status: <span className={isJumping ? 'jumping' : 'grounded'}>
+                 {isJumping ? 'Jumping!' : 'On Ground'}
+               </span>
+             </div>
+             <div>Press Up Arrow to Jump</div>
+             {showWarning && (
+               <div className="warning">Watch out! Jump over the obstacle!</div>
+             )}
+           </div>
+         );
+       }
+
+       ReactDOM.render(
+         <Game />,
+         document.getElementById('root')
+       );
+     </script>
+   </body>
+   </html>
